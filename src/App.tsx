@@ -136,45 +136,44 @@ function App() {
   };
 
   const downloadGPX = async () => {
-    if (!selectedPattern || !shapeData || !routeDetails) {
-      setError('Nenhum padrão selecionado ou dados de forma indisponíveis.');
-      return;
-    }
+  if (!selectedPattern || !shapeData || !routeDetails) {
+    setError('Nenhum padrão selecionado ou dados de forma indisponíveis.');
+    return;
+  }
 
-    try {
-      const gpxData = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <gpx version="1.1" creator="Carris Metropolitana">
-          <trk>
-            <name>${selectedPattern.headsign}</name>
-            <trkseg>
-              ${shapeData.geojson.geometry.coordinates
-                .map(
-                  (coord: [number, number]) =>
-                    `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
-                )
-                .join('\n')}
-            </trkseg>
-          </trk>
-        </gpx>
-      `;
+  try {
+    const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Carris Metropolitana">
+  <trk>
+    <name>${selectedPattern.headsign}</name>
+    <trkseg>
+      ${shapeData.geojson.geometry.coordinates
+        .map(
+          (coord: [number, number]) =>
+            `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
+        )
+        .join('\n')}
+    </trkseg>
+  </trk>
+</gpx>`;
 
-      const blob = new Blob([gpxData], { type: 'application/gpx+xml' });
-      const url = window.URL.createObjectURL(blob);
+    const blob = new Blob([gpxData.trimStart()], { type: 'application/gpx+xml' });
+    const url = window.URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rota-${routeDetails.short_name}-${selectedPattern.headsign.replace(/\s+/g, '-')}.gpx`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rota-${routeDetails.short_name}-${selectedPattern.headsign.replace(/\s+/g, '-')}.gpx`;
 
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error('Erro ao gerar GPX:', err);
-      setError('Erro ao gerar arquivo GPX');
-    }
-  };
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (err) {
+    console.error('Erro ao gerar GPX:', err);
+    setError('Erro ao gerar arquivo GPX');
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
