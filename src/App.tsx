@@ -143,16 +143,16 @@ function App() {
 
   try {
     const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Carris Metropolitana">
+<gpx version="1.1" creator="Carris Metropolitana" xmlns="http://www.topografix.com/GPX/1/1">
   <trk>
-    <name>${selectedPattern.headsign}</name>
+    <name>${routeDetails.short_name} ${selectedPattern.headsign}</name>
     <trkseg>
-      ${shapeData.geojson.geometry.coordinates
-        .map(
-          (coord: [number, number]) =>
-            `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
-        )
-        .join('\n')}
+${shapeData.geojson.geometry.coordinates
+  .map(
+    (coord: [number, number]) =>
+      `      <trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
+  )
+  .join('\n')}
     </trkseg>
   </trk>
 </gpx>`;
@@ -173,6 +173,7 @@ function App() {
     setError('Erro ao gerar arquivo GPX');
   }
 };
+
 
 
   return (
