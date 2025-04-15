@@ -118,29 +118,39 @@ function App() {
     }
 
     try {
-      const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
+      // 1. Cria a string GPX com possíveis espaços no início de linha
+let gpxRaw = `
+<?xml version="1.0" encoding="UTF-8"?>
 <gpx creator="Carris Metropolitana" version="1.1"
-  xmlns="http://www.topografix.com/GPX/1/1"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
-  <metadata>
-    <name>${selectedPattern.headsign}</name>
-    <author>
-      <name>Carris Metropolitana</name>
-    </author>
-  </metadata>
-  <trk>
-    <name>${selectedPattern.headsign}</name>
-    <trkseg>
-      ${shapeData.geojson.geometry.coordinates
-        .map(
-          (coord: [number, number]) =>
-            `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
-        )
-        .join('\n')}
-    </trkseg>
-  </trk>
-</gpx>`;
+xmlns="http://www.topografix.com/GPX/1/1"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+<metadata>
+<name>${selectedPattern.headsign}</name>
+<author>
+<name>Carris Metropolitana</name>
+</author>
+</metadata>
+<trk>
+<name>${selectedPattern.headsign}</name>
+<trkseg>
+${shapeData.geojson.geometry.coordinates
+  .map(
+    (coord: [number, number]) =>
+      `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
+  )
+  .join('\n')}
+</trkseg>
+</trk>
+</gpx>
+`;
+
+// 2. Limpa os espaços no início de cada linha (inclusive XML e trkpt)
+const gpxData = gpxRaw
+  .split('\n')                    // separa linha por linha
+  .map(line => line.trimStart()) // remove os espaços no começo de cada linha
+  .join('\n');                    // junta de novo numa única string
+
 
 
       const blob = new Blob([gpxData.trimStart()], { type: 'application/gpx+xml' });
