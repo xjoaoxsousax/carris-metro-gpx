@@ -1,47 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bus, Info, ArrowRight, Map as MapIcon, Download } from 'lucide-react';
-import { MapContainer, TileLayer, GeoJSON, useMap, LayersControl, Marker, Popup } from 'react-leaflet';
+import {
+  Search, Bus, Info, ArrowRight, Map as MapIcon, Download
+} from 'lucide-react';
+import {
+  MapContainer, TileLayer, GeoJSON, useMap, LayersControl, Marker, Popup
+} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Ícones personalizados para os marcadores
 const startIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Ícone para o ponto inicial
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
 });
 
 const endIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', // Ícone para o ponto final
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
 });
 
-interface RouteDetails {
-  short_name: string;
-  long_name: string;
-  municipalities: string[];
-  localities: string[];
-  patterns: string[];
-  routes: string[];
-}
-
-interface Pattern {
-  id: string;
-  headsign: string;
-  long_name: string;
-  shape_id: string;
-  route_id: string;
-  route_long_name: string;
-}
-
-interface Shape {
-  geojson: any;
-}
-
-// Component to handle map bounds updates
 function MapUpdater({ geojson }: { geojson: any }) {
   const map = useMap();
 
@@ -58,10 +38,10 @@ function MapUpdater({ geojson }: { geojson: any }) {
 
 function App() {
   const [routeNumber, setRouteNumber] = useState('');
-  const [routeDetails, setRouteDetails] = useState<RouteDetails | null>(null);
-  const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [selectedPattern, setSelectedPattern] = useState<Pattern | null>(null);
-  const [shapeData, setShapeData] = useState<Shape | null>(null);
+  const [routeDetails, setRouteDetails] = useState<any>(null);
+  const [patterns, setPatterns] = useState<any[]>([]);
+  const [selectedPattern, setSelectedPattern] = useState<any>(null);
+  const [shapeData, setShapeData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -80,12 +60,9 @@ function App() {
 
     try {
       const response = await fetch(`https://api.carrismetropolitana.pt/lines/${routeNumber}`);
-      if (!response.ok) {
-        throw new Error(`Rota não encontrada`);
-      }
+      if (!response.ok) throw new Error('Rota não encontrada');
       const data = await response.json();
 
-      // Atualiza os detalhes da rota com short_name e long_name
       setRouteDetails({
         short_name: data.short_name,
         long_name: data.long_name,
@@ -95,14 +72,12 @@ function App() {
         routes: data.routes,
       });
 
-      // Fetch all patterns details
       const patternsData = await Promise.all(
         data.patterns.map(async (patternId: string) => {
           const patternResponse = await fetch(`https://api.carrismetropolitana.pt/patterns/${patternId}`);
           if (!patternResponse.ok) throw new Error(`Erro ao carregar o padrão ${patternId}`);
           const patternData = await patternResponse.json();
 
-          // Fetch route details to get the long name
           const routeResponse = await fetch(`https://api.carrismetropolitana.pt/routes/${patternData.route_id}`);
           if (!routeResponse.ok) throw new Error(`Erro ao carregar a rota ${patternData.route_id}`);
           const routeData = await routeResponse.json();
@@ -114,6 +89,7 @@ function App() {
           };
         })
       );
+
       setPatterns(patternsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao buscar rota');
@@ -122,7 +98,7 @@ function App() {
     }
   };
 
-  const fetchPattern = async (pattern: Pattern) => {
+  const fetchPattern = async (pattern: any) => {
     try {
       setSelectedPattern(pattern);
 
@@ -136,13 +112,13 @@ function App() {
   };
 
   const downloadGPX = async () => {
-  if (!selectedPattern || !shapeData || !routeDetails) {
-    setError('Nenhum padrão selecionado ou dados de forma indisponíveis.');
-    return;
-  }
+    if (!selectedPattern || !shapeData || !routeDetails) {
+      setError('Nenhum padrão selecionado ou dados de forma indisponíveis.');
+      return;
+    }
 
-  try {
-    const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
+    try {
+      const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Carris Metropolitana" xmlns="http://www.topografix.com/GPX/1/1">
   <trk>
     <name>${routeDetails.short_name} ${selectedPattern.headsign}</name>
@@ -157,29 +133,24 @@ ${shapeData.geojson.geometry.coordinates
   </trk>
 </gpx>`;
 
-    const blob = new Blob([gpxData.trimStart()], { type: 'application/gpx+xml' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rota-${routeDetails.short_name}-${selectedPattern.headsign.replace(/\s+/g, '-')}.gpx`;
-
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  } catch (err) {
-    console.error('Erro ao gerar GPX:', err);
-    setError('Erro ao gerar arquivo GPX');
-  }
-};
-
-
+      const blob = new Blob([gpxData.trimStart()], { type: 'application/gpx+xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rota-${routeDetails.short_name}-${selectedPattern.headsign.replace(/\s+/g, '-')}.gpx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Erro ao gerar GPX:', err);
+      setError('Erro ao gerar arquivo GPX');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Bus className="w-10 h-10 text-blue-600" />
@@ -188,179 +159,113 @@ ${shapeData.geojson.geometry.coordinates
           <p className="text-gray-600 text-lg">Sistema de Consulta de Rotas</p>
         </div>
 
-        {/* Search Section */}
         <div className="max-w-xl mx-auto mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex gap-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={routeNumber}
-                    onChange={(e) => setRouteNumber(e.target.value)}
-                    placeholder="Digite o número da rota"
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                  <Search className="absolute right-3 top-2.5 text-gray-400 w-5 h-5" />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={routeNumber}
+                onChange={(e) => setRouteNumber(e.target.value)}
+                placeholder="Digite o número da rota"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
               <button
                 onClick={searchRoute}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
               >
                 {loading ? 'Buscando...' : 'Buscar'}
               </button>
             </div>
             {error && (
-              <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg">
-                <p className="flex items-center gap-2">
-                  <Info className="w-5 h-5" />
-                  {error}
-                </p>
+              <div className="mt-4 p-3 bg-red-100 text-red-800 rounded">
+                <Info className="inline mr-2" /> {error}
               </div>
             )}
           </div>
         </div>
 
-        {/* Results Section */}
         {routeDetails && (
           <div className="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto">
-            <div className="border-b pb-4 mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Rota {routeDetails.short_name}
-              </h2>
-              <p className="text-gray-600">{routeDetails.long_name}</p>
-            </div>
+            <h2 className="text-2xl font-semibold">Rota {routeDetails.short_name}</h2>
+            <p className="text-gray-600">{routeDetails.long_name}</p>
 
-            {/* Patterns Section */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <MapIcon className="w-5 h-5 text-blue-600" />
-                Selecionar percurso/destino
-              </h3>
-              <div className="grid gap-3">
-                {patterns.map((pattern) => (
-                  <button
-                    key={pattern.id}
-                    onClick={() => fetchPattern(pattern)}
-                    className={`text-left px-4 py-3 rounded-lg transition-colors ${
-                      selectedPattern?.id === pattern.id
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-bold text-base">
-                          {routeDetails?.short_name} - {pattern.headsign}
-                        </p>
-                      </div>
-                      <ArrowRight
-                        className={`w-5 h-5 flex-shrink-0 ${
-                          selectedPattern?.id === pattern.id ? 'text-blue-600' : 'text-gray-400'
-                        }`}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Map Section */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="h-[400px] w-full rounded-lg border border-gray-200 overflow-hidden">
-                  <MapContainer
-                    center={[38.736946, -9.142685]}
-                    zoom={12}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    {/* Camadas e marcadores */}
-                    <LayersControl position="topright">
-                      <LayersControl.BaseLayer checked name="Mapa">
-                        <TileLayer
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        />
-                      </LayersControl.BaseLayer>
-                      <LayersControl.BaseLayer name="Satélite">
-                        <TileLayer
-                          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                          attribution='&copy; <a href="https://www.esri.com">Esri</a>'
-                        />
-                      </LayersControl.BaseLayer>
-                    </LayersControl>
-
-                    {shapeData && <GeoJSON key={selectedPattern?.id} data={shapeData.geojson} />}
-                    {shapeData && <MapUpdater geojson={shapeData.geojson} />}
-
-                    {shapeData && shapeData.geojson && (
-                      <>
-                        <Marker
-                          position={[
-                            shapeData.geojson.geometry.coordinates[0][1],
-                            shapeData.geojson.geometry.coordinates[0][0],
-                          ]}
-                          icon={startIcon}
-                        >
-                          <Popup>Origem</Popup>
-                        </Marker>
-
-                        <Marker
-                          position={[
-                            shapeData.geojson.geometry.coordinates[
-                              shapeData.geojson.geometry.coordinates.length - 1
-                            ][1],
-                            shapeData.geojson.geometry.coordinates[
-                              shapeData.geojson.geometry.coordinates.length - 1
-                            ][0],
-                          ]}
-                          icon={endIcon}
-                        >
-                          <Popup>Destino</Popup>
-                        </Marker>
-                      </>
-                    )}
-                  </MapContainer>
-                </div>
-
-                {/* Botão de Baixar Rota */}
-                {selectedPattern && (
-                  <button
-                    onClick={downloadGPX}
-                    className="absolute bottom-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-2 hover:bg-blue-700 transition-colors z-[1100]"
-                  >
-                    <Download className="w-5 h-5" />
-                    <span>Baixar GPX</span>
-                  </button>
-                )}
-
-                {/* Legenda */}
-                <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-md z-[1000]">
-                  <div className="flex items-center gap-4">
-                    {/* Ponto de origem */}
-                    <div className="flex items-center gap-2">
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
-                        alt="Ponto de origem"
-                        className="w-6 h-6"
-                      />
-                      <span className="text-gray-700 font-medium">Origem</span>
-                    </div>
-
-                    {/* Ponto de destino */}
-                    <div className="flex items-center gap-2">
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/149/149060.png"
-                        alt="Ponto de destino"
-                        className="w-6 h-6"
-                      />
-                      <span className="text-gray-700 font-medium">Destino</span>
-                    </div>
+            <h3 className="mt-6 mb-3 font-medium text-lg flex items-center gap-2">
+              <MapIcon className="text-blue-600" /> Selecionar percurso/destino
+            </h3>
+            <div className="grid gap-3">
+              {patterns.map((pattern) => (
+                <button
+                  key={pattern.id}
+                  onClick={() => fetchPattern(pattern)}
+                  className={`text-left px-4 py-3 rounded-lg transition-colors ${
+                    selectedPattern?.id === pattern.id
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold">{routeDetails.short_name} - {pattern.headsign}</p>
+                    <ArrowRight />
                   </div>
-                </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 relative">
+              <div className="h-[400px] w-full rounded-lg border overflow-hidden">
+                <MapContainer center={[38.736946, -9.142685]} zoom={12} style={{ height: '100%', width: '100%' }}>
+                  <LayersControl position="topright">
+                    <LayersControl.BaseLayer checked name="Mapa">
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; OpenStreetMap contributors'
+                      />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Satélite">
+                      <TileLayer
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        attribution='&copy; Esri'
+                      />
+                    </LayersControl.BaseLayer>
+                  </LayersControl>
+
+                  {shapeData && <GeoJSON key={selectedPattern?.id} data={shapeData.geojson} />}
+                  {shapeData && <MapUpdater geojson={shapeData.geojson} />}
+
+                  {shapeData && (
+                    <>
+                      <Marker
+                        position={[
+                          shapeData.geojson.geometry.coordinates[0][1],
+                          shapeData.geojson.geometry.coordinates[0][0],
+                        ]}
+                        icon={startIcon}
+                      >
+                        <Popup>Origem</Popup>
+                      </Marker>
+                      <Marker
+                        position={[
+                          shapeData.geojson.geometry.coordinates.at(-1)[1],
+                          shapeData.geojson.geometry.coordinates.at(-1)[0],
+                        ]}
+                        icon={endIcon}
+                      >
+                        <Popup>Destino</Popup>
+                      </Marker>
+                    </>
+                  )}
+                </MapContainer>
               </div>
+
+              {selectedPattern && (
+                <button
+                  onClick={downloadGPX}
+                  className="absolute bottom-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" /> Baixar GPX
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -370,3 +275,4 @@ ${shapeData.geojson.geometry.coordinates
 }
 
 export default App;
+
