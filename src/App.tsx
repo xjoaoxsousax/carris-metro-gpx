@@ -119,19 +119,29 @@ function App() {
 
     try {
       const gpxData = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Carris Metropolitana" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx creator="Carris Metropolitana" version="1.1"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>${selectedPattern.headsign}</name>
+    <author>
+      <name>Carris Metropolitana</name>
+    </author>
+  </metadata>
   <trk>
-    <name>${routeDetails.short_name} ${selectedPattern.headsign}</name>
+    <name>${selectedPattern.headsign}</name>
     <trkseg>
-${shapeData.geojson.geometry.coordinates
-  .map(
-    (coord: [number, number]) =>
-      `      <trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
-  )
-  .join('\n')}
+      ${shapeData.geojson.geometry.coordinates
+        .map(
+          (coord: [number, number]) =>
+            `<trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`
+        )
+        .join('\n')}
     </trkseg>
   </trk>
 </gpx>`;
+
 
       const blob = new Blob([gpxData.trimStart()], { type: 'application/gpx+xml' });
       const url = window.URL.createObjectURL(blob);
